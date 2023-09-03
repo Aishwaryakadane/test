@@ -1,0 +1,59 @@
+package org.example;
+
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+
+        URL url = null;
+        HttpURLConnection connection = null;
+        int responseCode = 0;
+        String urlString = "https://api.nationalize.io/?name=nathaniel";
+
+        try {
+            url = new URL(urlString);
+        } catch (MalformedURLException e) {
+            System.out.println("Problem with the URL");
+            return;
+        }
+
+        try {
+            connection = (HttpURLConnection) url.openConnection();
+            responseCode = connection.getResponseCode();
+        } catch (Exception e) {
+            System.out.println("Connection problem");
+            return;
+        }
+
+        if (responseCode == 200) {
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String inputLine;
+
+            while ((inputLine = in.readLine()) != null) {
+                response.append(inputLine);
+            }
+            in.close();
+
+
+            JSONObject jsonResponse = new JSONObject(response.toString());
+
+
+            System.out.println("JSON Response: " + jsonResponse.toString());
+
+
+            String countryId = jsonResponse.getJSONArray("country").getJSONObject(0).getString("country_id");
+            System.out.println("Country ID: " + countryId);
+        } else {
+            System.out.println("API call could not be made. Response Code: " + responseCode);
+        }
+    }
+}
