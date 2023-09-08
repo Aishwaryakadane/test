@@ -1,0 +1,59 @@
+package org.example;
+import org.json.JSONObject;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Scanner;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        String urlString = "https://api.chucknorris.io/jokes/random";
+        URL url = null;
+        HttpURLConnection connection = null;
+
+        try {
+            url = new URL(urlString);
+        } catch (MalformedURLException e) {
+            System.out.println("Problem with the URL");
+            return;
+        }
+
+        int responseCode;
+        try {
+            connection = (HttpURLConnection) url.openConnection();
+            responseCode = connection.getResponseCode();
+        } catch (IOException e) {
+            System.out.println("Connection problem");
+            return;
+        }
+
+        if (responseCode == 200) {
+            Scanner scanner = new Scanner(url.openStream());
+            StringBuilder response = new StringBuilder();
+
+            while (scanner.hasNext()) {
+                response.append(scanner.nextLine());
+            }
+
+            scanner.close();
+
+
+
+            // Parse JSON using org.json
+            System.out.println(response.toString());
+
+           JSONObject jsonObject = new JSONObject(response.toString());
+
+            String joke = jsonObject.getString("value");
+            System.out.println(joke);
+        } else {
+            System.out.println("API call could not be made. Response Code: " + responseCode);
+        }
+
+        // Close the HttpURLConnection if it's open
+        if (connection != null) {
+            connection.disconnect();
+        }
+    }
+}
