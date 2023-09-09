@@ -1,0 +1,55 @@
+package org.example;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+
+public class Main {
+    public static void main(String[] args) throws IOException {
+        String urlString = "https://api.zippopotam.us/us/33162";
+        URL url = null;
+        HttpURLConnection connection = null;
+
+        try {
+            url = new URL(urlString);
+        } catch (MalformedURLException e) {
+            System.out.println("Problem with the URL");
+            return;
+        }
+
+        int responseCode;
+        try {
+            connection = (HttpURLConnection) url.openConnection();
+            responseCode = connection.getResponseCode();
+        } catch (IOException e) {
+            System.out.println("Connection problem");
+            return;
+        }
+
+        if (responseCode == 200) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+                StringBuilder response = new StringBuilder();
+                String line;
+
+                while ((line = reader.readLine()) != null) {
+                    response.append(line);
+                }
+
+                System.out.println(response.toString());
+
+
+            } catch (IOException e) {
+                System.out.println("Error reading the API response");
+            }
+        }
+        else
+            System.out.println("API call could not be made. Response Code: " + responseCode);
+
+
+        if (connection != null) {
+            connection.disconnect();
+        }
+    }
+}
