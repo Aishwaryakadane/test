@@ -1,0 +1,189 @@
+<dependencies>
+
+       <dependency>
+           <groupId>org.springframework.boot</groupId>
+           <artifactId>spring-boot-starter-web</artifactId>
+           <version>3.1.0</version>
+       </dependency>
+
+
+       <dependency>
+           <groupId>com.sun.mail</groupId>
+           <artifactId>javax.mail</artifactId>
+           <version>1.6.2</version>
+       </dependency>
+
+   </dependencies>
+--------- Car class --------------
+package org.example;
+public class Car {
+
+    private String make;
+    private String model;
+
+
+    public Car(String make, String model) {
+        this.make = make;
+        this.model = model;
+    }
+
+    public String getMake() {
+        return make;
+    }
+
+    public String getModel() {
+        return model;
+    }
+}
+--------- CarService -----------
+import org.springframework.stereotype.Component;
+
+@Component
+public class CarService {
+
+    private Car car;
+
+    public CarService() {
+
+        this.car = new Car("Toyota", "Camry");
+    }
+
+    public Car getCar() {
+        return car;
+    }
+}
+
+------------ CarConfig class -------
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class CarConfig {
+
+    @Bean
+    public Car myCar() {
+        return new Car("Ford", "Mustang");
+    }
+}
+
+------------- CustomizedMailAuthenticator -----------
+import javax.mail.Authenticator;
+import javax.mail.PasswordAuthentication;
+
+
+public class CustomizedMailAuthenticator extends Authenticator {
+
+    @Override
+    protected PasswordAuthentication getPasswordAuthentication()
+    {
+        return new PasswordAuthentication(MailConstants.SENDER, MailConstants.APP_PASSWORD);
+
+    }
+}
+
+-------- MailHandlerBase -------------
+import org.springframework.stereotype.Component;
+import javax.mail.Authenticator;
+import javax.mail.Message;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import java.util.Properties;
+
+@Component
+public class MailHandlerBase {
+
+    public void sendMail()
+    {
+
+        Properties sysPropertiesMap = System.getProperties();
+
+
+        sysPropertiesMap.put("mail.smtp.host","smtp.gmail.com"); //smtp server
+        sysPropertiesMap.put("mail.smtp.port","465"); //server port
+        sysPropertiesMap.put("mail.smtp.ssl.enable","true"); //ssl -secure socket layer
+        sysPropertiesMap.put("mail.smtp.auth","true"); //authentication - auth
+
+
+        Authenticator mailAuthenticator = new CustomizedMailAuthenticator();
+
+        Session mailSession = Session.getInstance(sysPropertiesMap,mailAuthenticator);
+
+        MimeMessage mailMessage = new MimeMessage(mailSession);
+
+        try {
+            mailMessage.setFrom(MailConstants.SENDER);
+            mailMessage.setSubject(" Mailing class");
+            mailMessage.setRecipient(Message.RecipientType.TO, new InternetAddress("aishkadane0@gmail.com"));
+            mailMessage.setText("trying !!!");
+
+            Transport.send(mailMessage);
+
+            System.out.println("Mail sent !!!");
+        }
+        catch(Exception ex)
+        {
+            System.out.println("Some error while preparing mail body!!!!");
+            System.out.println(ex.getMessage());
+        }
+    }
+}
+
+------------ MailConstants ---------
+public class MailConstants {
+
+    public static final String SENDER = "kadaneaishwarya@gmail.com";
+    public static final String APP_PASSWORD = "hcvjctpuhwnqsjtr";
+}
+
+------------CarController ------------
+package org.example;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+public class CarController {
+
+    @Autowired
+    private CarService carService;
+
+    @Autowired
+    private MailHandlerBase mailHandler;
+
+
+    @GetMapping("car")
+    public String getCarInfoAndSendEmail() {
+        // Get the car information from the CarService
+        Car car = carService.getCar();
+
+        // Create a string representation of the car information
+        String carInfo = "Make: " + car.getMake() + ", Model: " + car.getModel();
+
+        return carInfo;
+    }
+
+
+    @GetMapping("send-email")
+    public String sendEmail() {
+        // Call the sendMail method from MailHandlerBase
+        mailHandler.sendMail();
+
+        // Return a response
+        return "Email sent successfully!";
+    }
+}
+
+----------Main class -----------
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+
+public class Main {
+
+    public static void main(String[] args) {
+        SpringApplication.run(Main.class, args);
+    }
+}
